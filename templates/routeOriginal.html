@@ -1,0 +1,1614 @@
+
+<!--@layout("/common/_container.html",{plugins:["ztree"],js:["/assets/modular/system/map/banlie.js"]}){
+@}-->
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>车辆行驶展示</title>
+    <style>
+        html,
+        body,
+        main {
+            height: 100%;
+        }
+        label {
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        .form-group {
+            width: auto;
+            display: inline-block;
+            padding: .5rem;
+        }
+        .checkbox-inline {
+            padding: .3rem;
+        }
+        aside {
+            width: 20%;
+            height: 100%;
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+        }
+        .inputInfo {
+            margin-top: 13rem;
+            margin-left: 13rem;
+            float:left;
+        }
+        #containerInput {
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        #loadingTip {
+            position: absolute;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            padding: 3px 10px;
+            background: red;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .amap-simple-marker.my-marker .amap-simple-marker-label {
+            color: #fff;
+            font-size: 16px;
+            font-style: italic;
+            text-decoration: line-through;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"/>
+    <link rel="stylesheet" href="https://webapi.amap.com/ui/1.0/ui/misc/PathSimplifier/examples/">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
+</head>
+<body>
+<!--
+<div class="layui-body-header">
+    <span class="layui-body-header-title">车辆初始路径展示</span>
+</div>-->
+<main>
+    <div id="container"></div>
+
+    <!-- 模态框 -->
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">选择车辆</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-check" id="exampleInputName9">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox11" value="沪D3C323" name="checkbox">沪D3C323(载重8t)
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox21" value="沪D9N897" name="checkbox">沪D9N897(载重8t)
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox31" value="沪D7B856" name="checkbox">沪D7B856(载重8t)
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox41" value="沪B6A765" name="checkbox">沪B6A765(载重8t)
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox51" value="沪D6A751" name="checkbox">沪D6A751(载重8t)
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox61" value="沪A6A754" name="checkbox">沪A6A754(载重8t)
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox71" value="沪B6A700" name="checkbox">沪B6A700(载重8t)
+                        </label>
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox81" value="沪B6A724" name="checkbox">沪B6A724(载重8t)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <!--<button type="button" class="btn btn-primary">提交更改</button>-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 选订单 -->
+    <div class="modal fade" id="modalOrdersSelect" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalOrdersSelectLabel">选择订单</h5>
+                    <!--
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>-->
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped" id="inputOrders">
+                        <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectOrdersAll" value="selectOrdersAll" name="checkboxOrderAll" onclick="selectAllListener()">选择</th>
+                            <th>订单号</th>
+                            <th>网点名称</th>
+                            <th>货物体积</th>
+                            <th>货物重量</th>
+                        </tr>
+                        </thead>
+                        <tbody id="inputOrdersTBody"></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">确认</button>
+                    <!--<button type="button" class="btn btn-primary">提交更改</button>-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 选车型 -->
+    <div class="modal fade" id="modalCarTypeSelect" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalCarTypeSelectLabel">车型选择</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-check" id="exampleInputName11">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox111" value="1" name="checkboxCarType"> 载重8吨
+                        </label>
+                    </div>
+                    <div class="form-check" id="exampleInputName12">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" id="inlineCheckbox121" value="0" name="checkbox"> 载重1.5吨
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="containerInput">
+        <div class="input-card" style="width:13rem; visibility: hidden;" >
+            <aside>相关信息</aside>
+        </div>
+        <div class="input-card" style="width: 55%; height: 13rem; left: 1rem; top:1rem; bottom: 1rem;display: flex; flex-direction: column; align-items: baseline;">
+            <form class="form-inline">
+                <div class="form-group partOne">
+                    <label for="exampleInputName0">出发地：</label>
+                    <select id="exampleInputName0" class="form-control" style="width: 12rem;">
+                        <option value="0">江桥联华物流基地</option>
+                    </select>
+                </div>
+                <div class="form-group partOne">
+                    <label for="exampleInputName1">班列选择：</label>
+                    <select id="exampleInputName1" class="form-control" onchange="selectRouteListener()" style="width: 12rem;">
+                        <option value="empty">请选择</option>
+                    </select>
+                </div>
+                <div class="form-group partOne">
+                    <label for="exampleInputName2">日期选择：</label>
+                    <select id="exampleInputName2" class="form-control" style="width: 10rem; display: none;">
+                        <option value="empty">请先选择班列</option>
+                    </select>
+                    <!--<input id="date" type="text" class="form-control" placeholder="输入日期(2020-01-02)"/>-->
+                    <div class="input-group date">
+                        <input id="dateSelect" type="text" class="form-control"><span class="input-group-addon"><i class="glyphicon glyphicon-th"></i></span>
+                    </div>
+                </div>
+                <!--
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+                        车型选择
+                    </button>
+                </div>-->
+                <!--
+                <button type="button" class="btn btn-primary" id="submit2" style="width: 6rem; height: 2.4rem" onclick="getOrders()">
+                    <span class="spinner-border spinner-border-sm" id="loading2" role="status" aria-hidden="true" style="display: none;"></span>
+                    <span>确认</span>
+                </button>-->
+                <div class="form-group partOne">
+                    <button type="button" style="width: 6rem; height: 2.4rem" class="btn btn-primary" data-toggle="modal" data-target="#modalOrdersSelect" onclick="getOrders()">
+                        选择订单
+                    </button>
+                </div>
+
+                <div class="form-group partOne">
+                    <label for="exampleInputName13">选择车型：</label>
+                    <select id="exampleInputName13" class="form-control" style="width: 12rem;">
+                        <option value="0">载重1.5吨</option>
+                        <option value="1">载重8吨</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" id="submit" style="width: 6rem; height: 2.4rem">
+                    <span class="spinner-border spinner-border-sm" id="loading" role="status" aria-hidden="true" style="display: none;"></span>
+                    <span>排班</span>
+                </button>
+            </form>
+            <!--<hr style="FILTER: alpha(opacity=100,finishopacity=0,style=3)" width="100%" color=grey SIZE=3>-->
+        </div>
+
+    <div class="input-card" id="info" style="width:40rem; height: 70%; left: 1rem; padding-top: 0; visibility: hidden; overflow-y:scroll;">
+        <!--
+        <p>
+            <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+                Link with href
+            </a>
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                Button with data-target
+            </button>
+        </p>
+        <div class="collapse" id="collapseExample">
+            <div class="card card-body">
+                Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident.
+            </div>
+        </div>
+        -->
+        <div id="select-car" style="position: sticky; top: 0; padding: 1rem; background-color: white;">
+            <h4>排班</h4>
+            <select name="select" id="selectCar"></select>
+        </div>
+        <table class="table table-striped" id="tableCarOrders">
+            <tr class="example">
+                <th>门店编码</th>
+                <th>门店名称</th>
+                <th>货物重量(kg)</th>
+                <th>货物体积(m^3)</th>
+                <th>订单编号</th>
+            </tr>
+        </table>
+
+        <!--
+        <script type="text/javascript"
+                src="https://webapi.amap.com/maps?v=1.4.15&key=326c90e9d47f6a9710bc5e4594bb28f3&plugin=AMap.Driving"></script>
+                -->
+        <script type="text/javascript"
+                src="https://webapi.amap.com/maps?v=1.4.15&key=48159fb0bba44f4ff8766bb69c789538&plugin=AMap.Driving"></script>
+
+        <script src="https://cdn.bootcss.com/qs/6.7.0/qs.min.js"></script>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script src="https://cdn.staticfile.org/vue/2.4.2/vue.min.js"></script>
+        <script src="https://cdn.staticfile.org/axios/0.18.0/axios.min.js"></script>
+        <script src="https://www.html.cn/doc/underscore/underscore-min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+
+        <script >
+            // import api from "./api.js";
+            $('.input-group.date').datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true
+            });
+
+            let route = document.getElementById('exampleInputName1');
+            const color = ['#FA6500','#B242FA', '#5AFA6D', '#5dacfa','#FA8072', '#fac26d', '#FA7037'];
+            const api = {
+                orderSelect: 'http://10.141.209.224:5001/orders',
+                originRoute: 'http://10.141.209.224:5001/vehicles',
+                id2LngLat: 'http://10.141.209.224:5003/site',
+                paramsToSelect: 'http://10.141.209.224:5001/banlies'
+            };
+            let vehicleNum = 0, vehicle = [];
+            let selected = [], remain = [];
+            const carNumber = ['沪D3C323', '沪D9N897', '沪D7B856',  '沪B6A765', '沪B6A754', '沪A6A754', '沪B6A700', '沪D6A751', '沪B6A724'];
+            const icon = {
+                car: "https://webapi.amap.com/images/car.png",
+                site: '',
+                warehouse: ''
+            };
+            const warehouse = ['江桥联华物流基地（上海市嘉定区翔江公路3588号）'];
+            let
+                /**
+                 * 从接口读取的数据
+                 */
+                number2Id = [],   // index:网点在本班列序号, val: 网点编号
+                addressList = [], // index:网点在本班列序号, val: 网点经纬度[lat, lng]
+                idList = [],      // index:车辆序号, val: 网点编号数组
+                numberList = [],  // index:车辆序号, val: 网点序号数组
+                numberMap = new Map(),    // id -> number
+                id2NumberMap = new Map(), // number -> id
+                newMap = new Map(),
+                marketId2MarketName = new Map(),
+                marketName2OrderNumber = new Map(),
+                marketName2MarketId = new Map(),
+                marketName2MarketOrder = new Map(),
+                marketName2MarketCode = new Map(),
+                marketCode2OrderNumber = new Map(),
+                lineArr = [],     // index:车辆序号, val: 网点经纬度数组
+                markers = [],     // index:车辆序号, val: 车辆marker
+                marketInfo = [],  // 门店信息
+                orders = {
+                    date: [],
+                    orderId: [],
+                    siteName: [],     // 网点全称
+                    siteNameEasy: [], // 网点名称
+                    weight: [],       // 重量
+                    addr: [],         // 网点经纬度
+                    lng: [],
+                    lat: [],
+                    volume: [],       // 货物体积
+                    num: [],          // 实发总箱数
+                    siteType: []      // 门店类型
+                },      //
+                ordersAll = [],
+                passedPolylines = [],
+                center = [121.277055, 31.256239],//[116.379028, 39.865042],      // 仓库经纬度
+                pathSingle = {
+                    markersPassed: [],
+                    markersPassing: [],
+                    pathSinglePassed: [],
+                    pathSinglePassing: []
+                },
+                /**
+                 * 车辆订单
+                 */
+                carOrders = [],        // index: 车辆序号, val: 单个车辆的订单信息数组（[siteNumber, weight, volume, num]）
+                domCarOrders = [],     // 车辆对应订单的DOM
+                carDOMs = [],
+                carDOMsStyle = new Map(),
+                /**
+                 * 地图上的覆盖物和折线
+                 */
+                siteMarkers = [],      // 【marker】网点
+                carMarkers = [],       // 【marker】车辆
+                lines = {              // index: 车辆序号,
+                    linesEntire: [],   // [车辆全程路径的虚线, 虚线颜色]
+                    linesPassing: [],  // val: 车辆正在运行局部路径的实线
+                    linesPassed: [],   // val: 车辆已经运行路径的实线
+                    linesCurr: [],     // 当前正在画的线
+                },
+                /**
+                 * 经过导航扩充后，车辆的移动路径
+                 */
+                routes = {
+                    routesEntire: [],  // 全程路径
+                    routesLocal: [],   // 每辆车的局部路径
+                },
+                polylineAll = [],
+                polylineAllpassing = [],
+                selectValue = -1,
+                paramsToSelect = [];
+            let arrNew = [];
+
+            let map = new AMap.Map("container", {
+                resizeEnable: false,
+                center: center,
+                zoom: 14
+            });
+            // map.setFitView();
+            /**
+             * 获取算法可选参数
+             */
+            // 获取选择数据
+            function getData () {
+                try {
+                    axios.get(api.paramsToSelect)
+                        .then(res => {
+                            res = res.data;
+                            console.log('信息：', res);
+                            if(res.status === 'success') {
+                                res = res.data;
+                                paramsToSelect = res;
+
+                                // 班列选择 日期选择
+                                const routeId = document.getElementById('exampleInputName1'),
+                                    fragment = document.createDocumentFragment();
+
+                                paramsToSelect.forEach(item => {
+                                    let routeId = item.banlie_id;
+                                    const option = document.createElement('option');
+                                    option.value = routeId;
+                                    option.innerText = routeId + '号班列';
+                                    fragment.appendChild(option);
+                                });
+                                routeId.appendChild(fragment);
+                            }
+
+                        })
+                        .catch(function (error) { // 请求失败处理
+                            console.log(error);
+                        });
+                } catch (e) {
+                    console.log(e);
+                    alert('请重试！');
+                }
+
+            }
+            // 监听选择班列
+            function selectRouteListener () {
+
+                let val = document.getElementById('exampleInputName1').value,
+                    ele = document.getElementById('exampleInputName2');
+
+                console.log('listening...', val);
+                // 清空原有
+                while(ele.firstChild) {
+                    ele.firstChild.remove();
+                }
+                const option = document.createElement('option');
+                option.value = 'empty';
+                option.innerText = '请先选择班列';
+                ele.appendChild(option);
+                if(val !== 'empty') {
+                    console.log('add...');
+                    const fragment = document.createDocumentFragment();
+                    paramsToSelect.forEach(item => {
+                        let routeId = item.banlie_id;
+                        // console.log(routeId, val);
+                        if(routeId != val) return;
+                        // 新增
+                        item.deliverydate.forEach(date => {
+                            // console.log(date);
+                            const option = document.createElement('option');
+                            option.value = date; // 日期前加上年份
+                            option.innerText = date;
+                            fragment.appendChild(option);
+                        });
+                    });
+                    ele.appendChild(fragment);
+                }
+            }
+
+            /**
+             * 清空
+             */
+            function clearPartOne() {
+                // 全选取消选中
+                let checkbox = document.getElementById('selectOrdersAll');
+                checkbox.checked = false;
+                // 清空“选择订单”
+                let element = document.getElementById('inputOrdersTBody');
+                while (element.firstChild) {
+                    element.removeChild(element.firstChild);
+                }
+            }
+            function clearPartTwo() {
+                // 删除select中option
+                let select = document.getElementById('selectCar');
+                while(select.childNodes.length) {
+                    select.removeChild(select.lastChild);
+                }
+                // 删除table中订单
+                let table = document.getElementById('tableCarOrders');
+                let count = carMarkers.length;
+                while(table.childNodes.length) {
+                    table.removeChild(table.lastChild);
+                }
+                // 添加表头
+                let ele = document.getElementById('tableCarOrders');
+                const fragment = document.createDocumentFragment();
+                const trHead = document.createElement('tr'),
+                    keys = ['门店编码', '门店名称', '货物重量', '货物体积', '订单编号'];
+                keys.forEach(key => {
+                    const th = document.createElement('th');
+                    th.innerText = key;
+                    trHead.appendChild(th);
+                });
+                fragment.appendChild(trHead);
+                ele.appendChild(fragment);
+
+                // 清空地图上的覆盖物、折线
+                siteMarkers.forEach(marker => {
+                    marker.setMap(null);
+                });
+                carMarkers.forEach((marker, i) => {
+                    let lineEntire = lines.linesEntire[i][0];
+                    lineEntire.setMap(null);
+                    marker.setMap(null);
+                });
+                hideLines();
+                // 隐藏排班
+                ele = document.getElementById('info');
+                ele.style.visibility = 'hidden';
+
+                // 清空所有变量
+                clear();
+            }
+            function clear() {
+                vehicleNum = 0;
+                vehicle = [];
+                selected = [];
+                remain = [];
+                    number2Id = [],   // index:网点在本班列序号, val: 网点编号
+                    addressList = [], // index:网点在本班列序号, val: 网点经纬度[lat, lng]
+                    idList = [],      // index:车辆序号, val: 网点编号数组
+                    numberList = [],  // index:车辆序号, val: 网点序号数组
+                    numberMap = new Map(),    // id -> number
+                    id2NumberMap = new Map(), // number -> id
+                    newMap = new Map(),
+                    marketId2MarketName = new Map(),
+                    marketName2OrderNumber = new Map(),
+                    marketName2MarketId = new Map(),
+                    marketName2MarketOrder = new Map(), marketName2MarketCode = new Map(),
+                    marketCode2OrderNumber = new Map(),
+                    lineArr = [],     // index:车辆序号, val: 网点经纬度数组
+                    markers = [],     // index:车辆序号, val: 车辆marker
+                    marketInfo = [],  // 门店信息
+                    orders = {
+                        date: [],
+                        orderId: [],
+                        siteName: [],     // 网点全称
+                        siteNameEasy: [], // 网点名称
+                        weight: [],       // 重量
+                        addr: [],         // 网点经纬度
+                        lng: [],
+                        lat: [],
+                        volume: [],       // 货物体积
+                        num: [],          // 实发总箱数
+                        siteType: []      // 门店类型
+                    },      //
+                    ordersAll = [],
+                    passedPolylines = [],
+                    center = [121.277055, 31.256239],//[116.379028, 39.865042],      // 仓库经纬度
+                    pathSingle = {
+                        markersPassed: [],
+                        markersPassing: [],
+                        pathSinglePassed: [],
+                        pathSinglePassing: []
+                    },
+                    /**
+                     * 车辆订单
+                     */
+                    carOrders = [],        // index: 车辆序号, val: 单个车辆的订单信息数组（[siteNumber, weight, volume, num]）
+                    domCarOrders = [],     // 车辆对应订单的DOM
+                    carDOMs = [],
+                    carDOMsStyle = new Map(),
+                    /**
+                     * 地图上的覆盖物和折线
+                     */
+                    siteMarkers = [],      // 【marker】网点
+                    carMarkers = [],       // 【marker】车辆
+                    lines = {              // index: 车辆序号,
+                        linesEntire: [],   // [车辆全程路径的虚线, 虚线颜色]
+                        linesPassing: [],  // val: 车辆正在运行局部路径的实线
+                        linesPassed: [],   // val: 车辆已经运行路径的实线
+                        linesCurr: [],     // 当前正在画的线
+                    },
+                    /**
+                     * 经过导航扩充后，车辆的移动路径
+                     */
+                    routes = {
+                        routesEntire: [],  // 全程路径
+                        routesLocal: [],   // 每辆车的局部路径
+                    },
+                    polylineAll = [],
+                    polylineAllpassing = [],
+                    selectValue = -1;
+            }
+
+            /**
+             * 车辆选择显示与隐藏
+             */
+            function show(index) {
+                let marker = carMarkers[index];
+                console.log('set car marker:', new AMap.LngLat(center[0], center[1]));
+                marker.setPosition(new AMap.LngLat(center[0], center[1]));
+                marker.show();
+                let lineEntire = lines.linesEntire[index][0];
+                lineEntire.setMap(map);
+            }
+            // 隐藏单个车辆和对应虚线
+            function hide(index) {
+                let marker = carMarkers[index];
+                marker.hide();
+                let lineEntire = lines.linesEntire[index][0];
+                lineEntire.setMap(null);
+            }
+            // 清空所有实线
+            function hideLines() {
+                for(let line of lines.linesCurr) {
+                    line.setMap(null);
+                }
+                lines.linesCurr = [];
+            }
+            // 选择显示哪一辆车
+            function selectChange(e) {
+                console.log(e.target.value);
+                let carId = e.target.value - 1;
+                /*
+                if(selectValue == -1) {
+                    carMarkers.forEach((marker, i)=>{
+                        setCarOrdersDOMHidden(selectValue);
+                    });
+                } else {
+                    setCarOrdersDOMHidden(selectValue);
+                }
+                */
+                if(carId == -1) { // 全部车辆
+                    let j = 1;
+                    carMarkers.forEach((marker, i)=>{
+                        hide(i);
+                        setCarOrdersDOMHidden(i);
+                    });
+
+                    carMarkers.forEach((marker, i)=>{
+                        show(i);
+                        setCarOrdersDOMVisibility(i);
+                        getDriveDataSingle(i, marker, []);
+                    });
+
+                } else {
+                    // let str = '第'+carId+'辆车';
+                    carMarkers.forEach((marker, i)=>{
+                        hide(i);
+                        setCarOrdersDOMHidden(i);
+                    });
+                    hideLines();
+                    show(carId);
+                    // console.log('select car:', carId+1, color[carId]);
+                    console.log(carOrders[carId]);
+                    setCarOrdersDOMVisibility(carId);
+                    getDriveDataSingle(carId, carMarkers[carId], []);
+                    // getDriveDataInid2Addr(carId, arrlist, str, carMarkers[carId]);
+                }
+                selectValue = carId;
+            }
+            // 挂载select
+            function setInfoVisible(carNum) {
+                let ele = document.getElementById('info'),
+                    select = document.getElementById('selectCar');
+                const fragment = document.createDocumentFragment();
+
+                const option = document.createElement('option');
+                option.innerHTML = '全部车辆';
+                option.value = '0';
+                fragment.appendChild(option);
+                for(let i=1;i<=carNum;++i) {
+                    const option = document.createElement('option');
+                    option.innerHTML = '第' + i + '辆车';
+                    option.value = i.toString();
+                    fragment.appendChild(option);
+                }
+
+                select.appendChild(fragment);
+                select.addEventListener('change', selectChange);
+                ele.style.visibility = 'visible';
+            }
+
+            /**
+             * 算法输入参数部分
+             */
+            // 订单全选监听
+            function selectAllListener() {
+                console.log('监听全选');
+                // selectOrdersAll
+                let all = document.getElementById('selectOrdersAll');
+                if(all.checked) {
+                    let checkbox = document.getElementsByName('checkboxOrder');
+                    for(let i = 0, len = checkbox.length; i < len; i++){
+                        let curr = checkbox[i];
+                        if(!curr.checked) {
+                            // checkbox[i].setAttribute('checked', true);
+                            checkbox[i].checked = true;
+                        }
+
+                    }
+                } else {
+                    let checkbox = document.getElementsByName('checkboxOrder');
+                    for(let i = 0, len = checkbox.length; i < len; i++){
+                        let curr = checkbox[i];
+                        if(curr.checked) {
+                            // checkbox[i].setAttribute('checked', false);
+                            checkbox[i].checked = false;
+                        }
+
+                    }
+                }
+            }
+            // 算法输入参数
+            function getInput() {
+                let checkbox = document.getElementsByName('checkboxOrder'),
+                    selected = [];
+                let remain = [];
+                for(let i = 0, len = checkbox.length; i < len; i++){
+                    if(checkbox[i].checked) {
+                        selected.push(checkbox[i].value);
+                    } else {
+                        remain.push(checkbox[i].value)
+                    }
+                }
+                let routeId = document.getElementById('exampleInputName1').value,
+                    orderDate = document.getElementById('exampleInputName2').value,
+                    carType = document.getElementById('exampleInputName13').value;
+                let date = document.getElementById('dateSelect').value;
+                // console.log('date:', date);
+                // console.log('车辆类型：', carType === 0);
+
+                // let str = '[' + selected.join(',') + ']';
+                // console.log(str);
+                // console.log("选择的：",JSON.stringify(selected).toString(), routeId, orderDate);
+                let param = new URLSearchParams();
+                param.append('start', '0');
+                param.append('banlieId', routeId);
+                param.append('orderDate', date);
+                param.append('orders', JSON.stringify(selected));
+                param.append('carType', carType);
+                return param;
+                /*
+                let checkbox = document.getElementsByName('checkbox');
+                for(let i = 0, len = checkbox.length; i < len; i++){
+                    if(checkbox[i].checked) {
+                        selected.push(checkbox[i].value);
+                        vehicleNum++;
+                    } else {
+                        remain.push(checkbox[i].value)
+                    }
+                }
+                let routeId = document.getElementById('exampleInputName1').value;
+                //exampleInputName1
+                let orderDate = document.getElementById('exampleInputName2').value;
+                console.log('check:', vehicleNum, ' routeId:', routeId, ' date: ', orderDate);
+                return {
+                    banlieId: routeId,
+                    orderDate: orderDate,
+                    vehicleNum: vehicleNum
+                }*/
+            }
+            // 改变spinner状态，提交时loading
+            function changeBtnStatus(show) {
+                let btn = document.getElementById('loading');
+                if(show) {
+                    btn.style.display = 'inline-block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+
+            /**
+             * 获取数据
+             */
+            // 2020-04-15 接口的数据格式
+            // 读取something中的内容
+            function getSomething(obj, currNameConverted) {
+                let arr = orders[currNameConverted];
+                for(let j in obj) {
+                    if(obj.hasOwnProperty(j)) {
+                        arr.push(obj[j]);
+                    }
+                }
+                // console.log('arr: ', arr);
+            }
+            /*
+            function siteOrdersConvert(something) {
+
+                const arrName = ['id', 'name', '门店名称', '重量', 'longitude', 'latitude', '体积', '实发总箱数', '门店类型'],
+                    arrNameConverted = ['id', 'siteName', 'siteNameEasy', 'weight', 'lng', 'lat', 'volume', 'num', 'siteType'],
+                    arrNameReality = ['deliverydate', 'orderid', 'shopname', 'volume', 'weight'],
+                    arrNameRealityConverted = ['date', 'orderId', 'name', 'volume', 'weight'];
+
+                for(let j = 1, len = arrNameConverted.length; j<len; ++j) {
+                    let currNameConverted = arrNameConverted[j],
+                        currName = arrName[j],
+                        obj = something[currName];
+                    getSomething(obj, currNameConverted);
+                }
+                for(let j = 0, len = orders.lng.length; j<len; ++j) {
+                    orders.addr.push([orders.lng[j], orders.lat[j]]);
+                }
+                console.log('converted orders:', orders);
+            }
+
+             */
+
+            // 获取原始路径，网点编号、序号等
+            function getOriginRoute() {
+                let obj = getInput();
+                clearPartOne();
+                console.log('input obj:', obj);
+                let abc = 0, xyz = 0;
+                try {
+                    axios({
+                        method: 'post',
+                        url: api.originRoute,
+                        data: obj
+                    })
+                        .then(response => {
+                            let data = response.data;
+                            console.log('---------------');
+                            console.log(data);
+                            console.log('---------------')
+                            let tmp, flag = 1;
+                            if (data.status == 'success') {
+                                data = data.data;
+                                let count = 0;
+                                for (let item of data) {
+                                    if (item.hasOwnProperty('班列顺序')) {
+                                        tmp = item['班列顺序'];
+                                        const arr = [];
+                                        for (let k in tmp) {
+                                            arr.push(tmp[k]);
+                                        }
+                                        number2Id = arr;
+                                        number2Id.forEach((siteId, i) => {
+                                            newMap.set(siteId, i);
+                                        })
+                                    } else if (item.hasOwnProperty('仓库位置')) {
+                                        center = item['仓库位置'];
+                                        console.log('center:', center);
+                                    } else if (Array.isArray(item)) {
+                                        ;
+                                    } else if (item.hasOwnProperty('门店订单')) {
+                                        let something = item['门店订单'];
+                                        for(let detail of something) {
+                                            if(typeof detail !== 'undefined')
+                                                ordersAll.push(detail);
+                                        }
+                                        console.log('门店订单：', ordersAll);
+                                    } else if (item.hasOwnProperty('车辆类型')) {
+                                        ;
+                                    } else if (item.hasOwnProperty('门店信息')) {
+                                        marketInfo = item['门店信息'];
+                                        // marketInfo.pop(); // 去掉最后一个（仓库）
+                                    }else { // 门店，线路
+                                        if (flag == 1) { // 门店
+                                            for (let k in item) {
+                                                idList.push(item[k]);
+                                            }
+                                            if(abc < selected.length) {
+                                                vehicle[abc] = selected[abc];
+                                                abc++;
+                                            } else {
+                                                vehicle[abc] = remain[xyz];
+                                                abc++;
+                                                xyz++;
+                                            }
+                                        } else { // 线路
+                                            for (let k in item) {
+                                                let arr = item[k];
+                                                numberList.push(arr);
+                                                arr.forEach(number => {
+                                                    numberMap.set(number, count);
+                                                    id2NumberMap.set(count, number);
+                                                    count++;
+                                                })
+                                            }
+                                        }
+                                        flag = -flag;
+                                    }
+                                }
+                                ordersAll.forEach((order, i) => {
+                                    marketName2OrderNumber.set(order.shopname, i);
+                                    marketCode2OrderNumber.set(order.shopcode, i);
+                                });
+                                marketInfo.forEach((market, i) => {
+                                    marketId2MarketName.set(market['market_id'], market['market_name']);
+                                    marketName2MarketId.set(market['market_name'], market['market_id']);
+                                    marketName2MarketOrder.set(market['market_name'], i);
+                                    marketName2MarketCode.set(market['market_name'], market['market_code']);
+                                });
+
+                                /*
+                                console.log('------------');
+                                console.log('get original data.');
+                                console.log('number2Id:', number2Id);
+                                console.log('idList:', idList);
+                                console.log('numberList:', numberList);
+                                console.log('numberMap:', numberMap);
+                                console.log('门店：',marketInfo);
+                                console.log('订单：',ordersAll);
+                                console.log('marketName2OrderNumber:', marketName2OrderNumber);
+                                console.log('marketId2MarketName', marketId2MarketName);
+                                console.log('------------');
+                                */
+
+                                let markets = [];
+                                idList.forEach(arr => {
+                                    arr.forEach(siteId => {
+                                        markets.push(marketInfo[marketName2MarketOrder.get(marketId2MarketName.get(siteId))])
+                                    })
+                                });
+                                // 画出所有网点
+                                setSiteInfo(markets);
+                                // id -> lng lat
+                                idToAddr(markets);
+
+                            } else {
+                                console.log(data.status);
+                            }
+                        })
+                        .catch(function (error) { // 请求失败处理
+                            console.log(error);
+                        });
+                } catch (e) {
+                    console.log('出错：', e);
+                }
+            }
+
+            // 单个车辆的所有订单 -> carOrders
+            function getCarOrders(carId) {
+                let ordersSingleCar = idList[carId], arr = [];
+                console.log('-=-=-=-=-=-')
+                console.log(ordersSingleCar);
+                for(let i=0;i<ordersSingleCar.length;++i) {
+                    let siteNumber = ordersSingleCar[i];
+                    let marketName =  marketId2MarketName.get(siteNumber),
+                        code = marketName2MarketCode.get(marketName);
+                    // 2020-04-22 门店名称不能对应，改用编码对应
+                    let orderNumber = marketCode2OrderNumber.get(code),
+                        orderDate = document.getElementById('exampleInputName2').value.split('-').join('');
+
+
+                    let orders = ordersAll[orderNumber];
+                    console.log('2');
+                    console.log(orders);
+                    console.log('3');
+
+                    if(typeof orders == 'undefined') return;
+                    let siteName = orders.shopname,
+                        weight = orders.weight,
+                        volume = orders.volume,
+                        id = orders.orderid,
+                        date = orders.deliverydate;
+                    // id = orderDate + id; // 运单号：日期 + 订单号
+                    if(typeof weight != "undefined" && typeof volume != "undefined" && typeof id != "undefined")
+                        arr.push([code, siteName, weight, volume, id]);
+                }
+                /*
+                ordersSingleCar.forEach(siteNumber=>{
+                    let marketName =  marketId2MarketName.get(siteNumber);
+                    let orderNumber = marketName2OrderNumber.get(marketName);
+
+                    let orders = ordersAll[orderNumber];
+
+                    if(typeof orders == 'undefined') return;
+                    let siteName = orders.shopname,
+                        weight = orders.weight,
+                        volume = orders.volume,
+                        id = orders.orderid,
+                        date = orders.deliverydate;
+                    if(typeof weight != "undefined" && typeof volume != "undefined" && typeof id != "undefined")
+                        arr.push([siteName, weight, volume, id, date]);
+                });*/
+                carOrders.push(arr);
+            }
+            function createCarOrdersDOM(carId) {
+                let orders = carOrders[carId];
+                let ele = document.getElementById('tableCarOrders');
+                const fragment = document.createDocumentFragment();
+
+                const tr = document.createElement('tr'),
+                    car = document.createElement('td');
+                car.innerHTML = '第' + (carId + 1) + '辆车';
+                car.colspan = 4;
+                tr.colspan = 4;
+                tr.id = carId;
+                tr.className = 'car' + carId;
+                tr.appendChild(car);
+                fragment.appendChild(tr);
+
+                orders.forEach(order => {
+                    const site = document.createElement('tr');
+                    site.className = 'car' + carId;
+                    order.forEach((detail, i) => {
+                        const td = document.createElement('td');
+                        td.innerHTML = detail;
+                        site.appendChild(td);
+                    });
+                    fragment.appendChild(site);
+                });
+                // carDOMsStyle.push([fragment, carId]);
+                carDOMsStyle.set(carId, fragment);
+
+                ele.appendChild(fragment);
+                // select.addEventListener('change', selectChange);
+                // ele.style.display = '';
+
+            }
+            function createCarOrdersDOMSingle() {
+                let info = document.getElementById('info');
+                carOrders.forEach((orders, index) => {
+                    // 某一辆车
+                    const fragment = document.createDocumentFragment(),
+                        table = document.createElement('table'),
+                        tr = document.createElement('tr');
+                    table.style.display = 'none';
+                    table.id = index + 'car';
+                    table.class = "table table-striped";
+                    const key = ['网点名称：', '重量：', '体积：', '件数：'];
+                    key.forEach(item => {
+                        const td = document.createElement('th');
+                        td.innerHTML = item;
+                        tr.appendChild(td);
+                    });
+                    table.appendChild(tr);
+                    orders.forEach(order => {
+                        const innerTr = document.createElement('tr')
+                        order.forEach(item => {
+                            const td = document.createElement('td');
+                            td.innerHTML = item;
+                            innerTr.appendChild(td);
+                        });
+                        table.appendChild(innerTr);
+                    })
+                    fragment.appendChild(table);
+                    info.appendChild(fragment);
+                    carDOMs.push(fragment);
+                });
+
+            }
+            function setCarOrdersDOMHidden(carId) {
+                let tableContent = document.getElementById('tableCarOrders');
+                let str = 'main div table#tableCarOrders.table.table-striped tr.car';
+                let arr = document.querySelectorAll(str + carId);
+                if(arr.length) {
+                    const fragment = document.createDocumentFragment();
+                    arr.forEach(tr => {
+                        let tmp = tr.parentNode.removeChild(tr);
+                        fragment.appendChild(tmp);
+                    });
+                }
+
+                // carDOMsStyle.push([fragment, carId]);
+            }
+            function setCarOrdersDOMVisibility(carId) {
+                let tableContent = document.getElementById('tableCarOrders');
+                /*
+                if(carDOMsStyle.has(carId)) {
+                    let t = carDOMsStyle.get(carId);
+                    console.log(t);
+                    tableContent.appendChild(t);
+                }*/
+                createCarOrdersDOM(carId);
+                /*
+                carDOMsStyle.forEach(item => {
+                    if(item[1] === carId) {
+                        tableContent.appendChild(item[0]);
+                    }
+                });
+                */
+                // tableContent.appendChild(carDOMsStyle[carId]);
+                // console.log('剩余：', carDOMsStyle);
+
+                /*
+                console.log('tablecontent:', tableContent);
+                // document.getElementById('tableCarOrders').style.display = 'none';
+                let idName = carId + 'car';
+                document.getElementById(idName).style.display = 'block';
+                // console.log(carDOMs[carId]);
+
+                 */
+                /*
+                let carSum = carMarkers.length;
+                for(let i = 0; i<carSum; ++i) {
+                    if(i === carId) {
+                        tableContent.appendChild(carDOMsStyle[carId]);
+                    } else {
+                        let str = 'main div table#tableCarOrders.table.table-striped tr.car';
+                        let arr = document.querySelectorAll(str + i);
+                        arr.forEach(tr => {
+                            tr.style.display = 'none'
+                        });
+                    }
+                }
+
+                 */
+            }
+
+            // 网点ID -> 经纬度，并调用路径规划扩充路径数组
+            async function idToAddr(markets) {
+                /*
+                for (let i of number2Id) { // 通过接口获取网点的经纬度
+                    await axios.get(api.id2LngLat, {params: {id: i}})
+                        .then(res => {
+                            res = res.data;
+                            if (res.success == 0) {
+                                let addr = [res.lng, res.lat];
+                                addressList.push(addr);
+                            } else {
+                                console.log('error. get address.');
+                            }
+                        })
+                        .catch(function (error) { // 请求失败处理
+                            console.log(error);
+                        });
+
+                }*/
+                markets.forEach(market => {
+                   let lnglat = market['lon_lan'].split(',');
+                   addressList.push(lnglat);
+                });
+                let ccc = 0;
+                for (let item of idList) {
+                    let arr = [];
+                    for (let number of item) {
+                        let addr = addressList[ccc++]; // number为编号，从1开始，数组从0开始
+                        if(typeof addr !='undefined') {
+                            arr.push(addr);
+                        }
+                    }
+                    arr.push(center);
+                    lineArr.push(arr);
+                }
+                console.log('lineArr:', lineArr);
+                let j = 1;
+                for(let arr of lineArr) {
+                    // 每辆车的订单 写入 carOrders
+                    console.log('分支车辆订单:', arr)
+                    getCarOrders(j-1);
+                    let str = '第'+j+'辆车';
+                    let marker = new AMap.Marker({
+                        map: map,
+                        position: center,
+                        icon: icon.car,
+                        offset: new AMap.Pixel(-26, -13),
+                        autoRotation: true,
+                        angle: -90,
+                        label: {
+                            content: str,
+                            direction: 'left',
+                            offset: new AMap.Pixel(20, 20)
+                        }
+                    });
+
+                    carMarkers.push(marker);
+
+                    getDriveDataInid2Addr(j, arr, str, marker);
+                    j++;
+                }
+                console.log('车辆订单：', carOrders);
+                carOrders.forEach((order, i) => {
+                    console.log('创建dom', i);
+                    createCarOrdersDOM(i);
+                });
+                createCarOrdersDOMSingle();
+                console.log('carOrders:', carOrders);
+                // 设置select
+                let carNum = idList.length;
+
+                await setInfoVisible(carNum); // 显示车辆对应的订单信息
+                await changeBtnStatus(false); // 还原“提交”按钮状态
+            }
+            function getDriveDataInid2Addr(j, arr, str, marker) {
+                let start = center,
+                    driving = new AMap.Driving({
+                        policy: AMap.DrivingPolicy.LEAST_TIME
+                    });
+                arr.unshift(start);
+                getDriveData(j, arr, marker, driving, []);
+            }
+
+            // 地图上画网点，设置点击事件
+            function setSiteInfo(markets) {
+                for(let i = 0, len = markets.length; i<len; ++i) {
+                    let market = markets[i],
+                        id = market['market_id'],
+                        code = market['market_code'],
+                        name = market['market_name'],
+                        addr = market['lon_lan'].split(',');
+                    let Marker = new AMap.Marker({
+                        position: addr,
+                        map: map
+                    });
+                    siteMarkers.push(Marker);
+
+                    // 点击门店显示信息
+                    let content = '<div class="info-title" style="padding:7px 0px 0px 0px;">'+ name +'</div><div class="info-content"><br/>' +
+                        '<div>网点类型：' + '门店' + '</div><br/>';
+
+                    let infowindow = new AMap.InfoWindow({
+                        content: content,
+                        offset: new AMap.Pixel(0, -30)
+                    });
+                    Marker.on('click', function () {
+                        infowindow.open(map, addr);
+                    });
+                }
+
+                // 2020-04-15 接口的数据格式
+                /*
+                let siteAddrList = orders.addr,
+                    siteNameList = orders.siteName,
+                    siteTypeList = orders.siteType;
+                for (let i = 0; i < siteAddrList.length; i++) {
+                    let addr = siteAddrList[i],
+                        name = siteNameList[i],
+                        type = siteTypeList[i];
+                    // 生成门店
+                    let Marker = new AMap.Marker({
+                        position: addr,
+                        map: map
+                    });
+                    siteMarkers.push(Marker);
+
+                    // 点击门店显示信息
+                    let content = '<div class="info-title" style="padding:7px 0px 0px 0px;">'+ name +'</div><div class="info-content">' +
+                        '<img src="https://webapi.amap.com/images/amap.jpg">门店类型：' + type +
+                        '<br/>';
+                    let infowindow = new AMap.InfoWindow({
+                        content: content,
+                        offset: new AMap.Pixel(0, -30)
+                    });
+                    Marker.on('click', function () {
+                        infowindow.open(map, addr);
+                    });
+                }
+                */
+            }
+
+            // 初始时所有车辆的局部路径
+            function getDriveDataLocal(carIndex, driving, marker, allPaths, i, j, arrlist, passed = []) {
+                let nextPaths = [];
+                let ccolor = color[carIndex];
+                let ori = arrlist[i], des = arrlist[j];
+                driving.search(ori, des, function (status, result) {
+                    if (status === 'complete') {
+                        console.log('第'+carIndex+'辆车局部驾车路线完成');
+                        nextPaths = getRoute(result);
+                        let passedPolylineAll = new AMap.Polyline({
+                            map: map,
+                            path: allPaths,
+                            strokeColor: ccolor,  //线颜色
+                            strokeWeight: 6,      //线宽
+                            strokeStyle: 'dashed',
+                            lineJoin: 'round'
+                        });
+                        // passedPolylineAll.setPath(allPaths);
+                        lines.linesEntire.push(passedPolylineAll);
+
+                        // 已经过的路径
+                        if (passed.length !== 0) {
+                            let passedPolyline = new AMap.Polyline({
+                                map: map,
+                                path: nextPaths,
+                                strokeColor: ccolor,  //线颜色
+                                strokeWeight: 6,      //线宽
+                                lineJoin: 'round'
+                            });
+                            // passedPolyline.setPath(passed);
+                            lines.linesPassed.push(passedPolyline);
+                            lines.linesCurr.push(passedPolyline);
+                        }
+
+                        // 移动过程中的路径
+                        let passedPolyline = new AMap.Polyline({
+                            map: map,
+                            path: nextPaths,
+                            strokeColor: ccolor,  //线颜色
+                            strokeWeight: 6,      //线宽
+                            lineJoin: 'round'
+                        });
+                        lines.linesPassing.push(passedPolyline);
+                        lines.linesCurr.push(passedPolyline);
+
+                        marker.on('moving', function (e) {
+                            let path = e.passedPath;
+                            // passedPolyline.setPath(path);
+                        });
+                        marker.on('movealong', function () {
+                            var info = [];
+                            info.push("<div style=\"padding:7px 0px 0px 0px;\"><h4>到达网点</h4>");
+                            info.push("<p class='input-item'>正在上下货...</p>");
+                            let infowindow = new AMap.InfoWindow({
+                                content: info.join('')
+                            });
+                            infowindow.on('close', function () {
+                                console.log('close window.')
+                                // getDynamic(0, j)
+                                // 获取动态路径
+                                if (false) {
+                                    passedPolylineAll.setMap(null);
+                                    pathSingle.pathSinglePassed = passed.concat(nextPaths);
+                                    // TODO:新获取的仓库
+                                    arrNew = [[116.42, 39.89]];
+
+                                    console.log('dynamic routes...')
+                                    let s = nextPaths.slice(-1)[0];
+                                    // console.log(s);
+                                    arrNew.unshift([s.lng, s.lat])
+                                    console.log('arrNew:', arrNew);
+                                    getDriveData(carIndex, arrNew, marker, driving, passed.concat(nextPaths));
+                                    return;
+                                } else {
+                                    // 未改变的情况
+                                    if (j + 1 < arrlist.length) {
+                                        getDriveDataLocal(carIndex, driving, marker, allPaths, i + 1, j + 1, arrlist, passed.concat(nextPaths));
+                                    }
+                                }
+                            })
+                            infowindow.open(map, nextPaths.slice(-1)[0]);
+                            console.log('arrive at next station.');
+                        });
+                        // console.log('nextPathsAll:', nextPathsAll);
+                        marker.moveAlong(nextPaths, 4000);
+                        map.setFitView();
+                    } else {
+                        console.log('获取驾车数据失败：' + result)
+                    }
+                });
+                return []; // 路径未变化
+            }
+
+            function getRoute(res) {
+                let allPaths = [], allStartPoints = [];
+                let allWays = res.routes[0].steps;
+                for (let i = 0; i < allWays.length; i++) {
+                    let step = allWays[i];
+                    let startArr = [step.start_location.lng, step.start_location.lat];
+                    allStartPoints.push(startArr);
+                    allPaths.push(startArr);
+
+                    let PathArr = step.path;
+                    for (let t = 0; t < PathArr.length; t++) {
+                        let eachPathPoint = PathArr[t],
+                            eachPathArr = [eachPathPoint.lng, eachPathPoint.lat];
+                        //折线图使用
+                        allPaths.push(eachPathArr);
+                        allStartPoints.push(eachPathArr);
+                    }
+                }
+                return allPaths;
+            }
+
+            function getDriveDataStatic(carIndex, arrlist, marker, driving, passed) {
+                let waypoints = arrlist.map((addr, i) => {
+                        return new AMap.LngLat(Number(addr[0]), Number(addr[1]));
+                    }),
+                    ori = waypoints.shift(),
+                    nextDes = [].concat(waypoints),
+                    des = waypoints.pop(),
+                    opt = {waypoints: waypoints},
+                    path = [],
+                    allPaths = [],
+                    allStartPoints = [],
+                    nextPathsAll = [],
+                    nextPaths = [],
+                    Marker = new AMap.Marker({
+                        position: arrlist[0],
+                        map: map
+                    });
+                // let ori = new AMap.LngLat(...start);
+
+                driving.search(ori, des, opt, function (status, result) {
+                    if (status === 'complete') {
+                        console.log('绘制驾车路线完成')
+                        console.log(result);
+                        // let nextDes = arrlist.slice(1);
+                        let nextDes = arrlist.slice(1);
+                        allPaths = getRoute(result);
+
+                        // 门店
+                        for (let i = 0; i < nextDes.length; i++) {
+                            let Marker = new AMap.Marker({
+                                position: nextDes[i],
+                                map: map
+                            })
+                        }
+
+                        let ccolor = color[carIndex];
+                        let passedPolylineAll = new AMap.Polyline({
+                            map: map,
+                            path: allPaths,
+                            strokeColor: ccolor,  //线颜色
+                            strokeWeight: 6,      //线宽
+                            strokeStyle: 'dashed',
+                            lineJoin: 'round'
+                        });
+                        polylineAll.push(passedPolylineAll);
+                        passedPolylineAll.setPath(allPaths);
+
+                        // 移动过程中的路径
+                        let passedPolyline = new AMap.Polyline({
+                            map: map,
+                            path: allPaths,
+                            strokeColor: ccolor,  //线颜色
+                            strokeWeight: 6,      //线宽
+                            lineJoin: 'round'
+                        });
+                        polylineAllpassing.push(passedPolyline);
+
+                        marker.on('moving', function (e) {
+                            let path = e.passedPath;
+                            passedPolyline.setPath(path);
+                        });
+                        // console.log('nextPathsAll:', nextPathsAll);
+                        marker.moveAlong(allPaths, 4000);
+                        map.setFitView();
+                    } else {
+                        console.log('获取驾车数据失败：' + result)
+                    }
+                });
+            }
+
+            // 初始时所有车辆
+            function getDriveData(carIndex, arrlist, marker, driving, passed) {
+
+                let waypoints = arrlist.map(addr => {
+                        return new AMap.LngLat(Number(addr[0]), Number(addr[1]));
+                    }),
+                    ori = waypoints.shift(),
+                    des = waypoints.pop(),
+                    opt = {waypoints: waypoints},
+                    allPaths = [],
+                    // 出发地（目前为仓库）
+                    Marker = new AMap.Marker({
+                        position: arrlist[0],
+                        map: map
+                    });
+                let content = '<div class="info-title" style="padding:7px 0px 0px 0px;">仓库</div><div class="info-content">' + '<br/>';
+
+                let infowindow = new AMap.InfoWindow({
+                    content: content,
+                    offset: new AMap.Pixel(0, -30)
+                });
+                Marker.on('click', function () {
+                    infowindow.open(map, arrlist[0]);
+                });
+
+
+                driving.search(ori, des, opt, function (status, result) {
+                    if (status === 'complete') {
+                        console.log('绘制驾车路线完成')
+                        console.log(result);
+                        // let nextDes = arrlist.slice(1);
+                        let nextDes = arrlist.slice(1);
+                        // 获得所有车辆的全程路径
+                        allPaths = getRoute(result);
+                        routes.routesEntire.push(allPaths);
+
+                        // 生成全程路径的虚线，并在地图上画出
+                        // console.log('original carId:', carIndex, color[carIndex - 1]);
+                        let passedPolylineAll = new AMap.Polyline({
+                            map: map,
+                            path: allPaths,
+                            strokeColor: color[carIndex - 1],  //线颜色
+                            strokeWeight: 6,      //线宽
+                            strokeStyle: 'dashed',
+                            lineJoin: 'round'
+                        });
+                        passedPolylineAll.setPath(allPaths);
+                        lines.linesEntire.push([passedPolylineAll, color[carIndex - 1]]);
+
+                        // getDriveDataLocal(carIndex, driving, marker, allPaths, 0, 1, arrlist, passed);
+                    } else {
+                        console.log('获取驾车数据失败：' + result)
+                    }
+                });
+
+            }
+
+            // 单个车辆
+            function getDriveDataSingle(carIndex, marker, passed) {
+
+                let allPaths = routes.routesEntire[carIndex];
+
+                let passedPolylineAll = lines.linesEntire[carIndex][0],
+                    lineColor = lines.linesEntire[carIndex][1];
+                passedPolylineAll.setPath(allPaths);
+
+                // 移动过程中的路径
+                let passedPolyline = new AMap.Polyline({
+                    map: map,
+                    path: allPaths,
+                    strokeColor: lineColor,  //线颜色
+                    strokeWeight: 6,      //线宽
+                    lineJoin: 'round'
+                });
+                lines.linesCurr.push(passedPolyline);
+
+                marker.on('moving', function (e) {
+                    let path = e.passedPath;
+                    passedPolyline.setPath(path);
+                });
+                marker.moveAlong(allPaths, 4000);
+                map.setFitView();
+            }
+
+            /**
+             * 1.初始地图、路径
+             *
+             **/
+            function main() {
+                let checkbox = document.getElementsByName('checkboxOrder'),
+                    selected = [];
+                for(let i = 0, len = checkbox.length; i < len; i++){
+                    if(checkbox[i].checked) {
+                        selected.push(checkbox[i].value);
+                    }
+                }
+                if(selected.length === 0) {
+                    alert('请选择订单！');
+                    return;
+                }
+                // 提交前清空地图
+                clearPartTwo();
+                changeBtnStatus(true); // loading 提示
+                getOriginRoute();      // 获取原始路径
+            }
+            function getOrders() {
+                // 提交前先清空订单选择
+                clearPartOne();
+
+                let routeId = document.getElementById('exampleInputName1').value;
+                // let orderDate = document.getElementById('exampleInputName2').value; // 从接口返回的日期中，直接选择日期
+                let orderDate = document.getElementById('dateSelect').value;
+                // console.log('日期：', orderDate);
+
+                let obj =  {
+                    start: 0,
+                    banlieId: routeId,
+                    orderDate: orderDate
+                };
+                console.log('obj:', obj);
+                axios.get(api.orderSelect, {params: obj})
+                    .then(res => {
+                        res = res.data;
+                        console.log('返回的订单：', res);
+                        if (res.status === 'success') {
+                            res = res.data;
+                            console.log('orders:', res);
+                            let arr = [];
+                            res.forEach(order => {
+                                let detail = [order.deliverydate, order.orderid, order.shopname, order.volume, order.weight];
+                                arr.push(detail);
+                            });
+                            // 订单显示
+                            let ele = document.getElementById('inputOrdersTBody');
+                            const fragment = document.createDocumentFragment();
+                            arr.forEach(order => {
+                                const tr = document.createElement('tr'),
+                                    td = document.createElement('td'),
+                                    checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.value = order[1]; // 订单号
+                                checkbox.name = 'checkboxOrder';
+                                td.appendChild(checkbox);
+                                tr.appendChild(td);
+                                order.forEach((detail, i) => {
+                                    if(i == 0) return;
+                                    const td = document.createElement('td');
+                                    td.innerHTML = detail;
+                                    tr.appendChild(td);
+                                });
+                                fragment.appendChild(tr);
+                            });
+                            ele.appendChild(fragment);
+                        } else {
+                            console.log('error.');
+                        }
+                    })
+                    .catch(function (error) { // 请求失败处理
+                        console.log(error);
+                    });
+            }
+
+
+
+            let btnSubmit = document.getElementById('submit');
+            let lazyLayout = _.debounce(main, 2000, true); // 防抖
+
+            btnSubmit.addEventListener('click', lazyLayout);
+            getData();
+
+        </script>
+
+        <script src="//webapi.amap.com/ui/1.0/main.js?v=1.0.11"></script>
+
+
+    </div>
+    </div>
+
+</main>
+</body>
+
+</html>
+
